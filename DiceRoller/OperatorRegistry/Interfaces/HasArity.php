@@ -2,7 +2,7 @@
 
 namespace DiceRoller\OperatorRegistry\Interfaces;
 
-interface HasName
+interface HasArity
 {
-    public function getName(): string;
+    public function getArity(): int;
 }
