@@ -46,6 +46,8 @@ class DiceRollHelp
     {
         $help = [];
         $help[] = 'Dice Roller Help:';
+        $help[] = 'See project source code online at: '
+            . '<a href="https://github.com/dgh2/DiceRoller">https://github.com/dgh2/DiceRoller</a>';
         $help = array_merge($help, self::getHelpArrayForOperatorNames(
             'The following direct replacement shortcuts are supported:',
             $this->operationRegistry->getNullaryOperatorNames()));
