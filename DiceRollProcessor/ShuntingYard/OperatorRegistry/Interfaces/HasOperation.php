@@ -1,0 +1,1 @@
+<?phpnamespace ShuntingYard\OperatorRegistry\Interfaces;require_once('HasName.php');require_once('HasPrecedence.php');require_once('HasArity.php');interface HasOperation extends HasName, HasPrecedence, HasArity{    public function getOperation(): callable;}

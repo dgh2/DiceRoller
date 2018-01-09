@@ -1,0 +1,1 @@
+<?phpnamespace ShuntingYard\OperatorRegistry\Interfaces;interface HasPrecedence{    public function getPrecedence(): int;}

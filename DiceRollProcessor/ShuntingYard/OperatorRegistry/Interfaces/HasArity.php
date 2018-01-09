@@ -1,0 +1,1 @@
+<?phpnamespace ShuntingYard\OperatorRegistry\Interfaces;interface HasArity{    public function getArity(): int;}

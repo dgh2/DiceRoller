@@ -1,0 +1,1 @@
+<html><body><?phprequire_once('DiceRollProcessor/DiceRollHelp.php');require_once('DiceRollProcessor/DiceRollSymbolRegistry.php');echo (new DiceRollHelp(new DiceRollSymbolRegistry()))->getHelpText('<br/>');?></body></html>

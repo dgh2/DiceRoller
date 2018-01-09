@@ -1,0 +1,1 @@
+<?phpnamespace ShuntingYard\OperatorRegistry\Interfaces;require_once('HasOperation.php');interface HasBinaryOperation extends HasOperation{    public function call($operand1, $operand2);    public function isLeftAssociative();    public function isRightAssociative();}

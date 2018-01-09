@@ -1,0 +1,1 @@
+<?phpnamespace ShuntingYard\OperatorRegistry\Interfaces;require_once('HasOperation.php');interface HasNullaryOperation extends HasOperation{    public function call();}

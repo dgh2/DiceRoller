@@ -1,0 +1,1 @@
+<?phpnamespace ShuntingYard\OperatorRegistry\Interfaces;interface HasGroup{    public function getContents(): array;    public function addContents($contents);}
