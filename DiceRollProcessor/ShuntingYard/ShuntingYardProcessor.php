@@ -226,19 +226,18 @@ class ShuntingYardProcessor
                         $this->postfixTokenArray[] = $result;
                         $this->debugLog[] = 'Pushing ' . var_export($result, true) . ' onto postfixTokenArray';
                     }
-                } else
-                    if (($expectNullaryOrPrefixUnary &&
-                            !(!$token instanceof HasOperation
-                                || $token instanceof HasNullaryOperation
-                                || ($token instanceof HasUnaryOperation && $token->isPrefix())))
-                        || ($expectBinaryOrPostfixUnary &&
-                            !($token instanceof HasBinaryOperation
-                                || ($token instanceof HasUnaryOperation && $token->isPostfix())))) {
-                        if ($token instanceof HasOperation) {
-                            $this->error = 'Unexpected operator: ' . $token->getName();
-                        } else {
-                            $this->error = 'Unexpected operation, received: ' . var_export($token, true);
-                        }
+                } elseif (($expectNullaryOrPrefixUnary &&
+                        !(!$token instanceof HasOperation
+                            || $token instanceof HasNullaryOperation
+                            || ($token instanceof HasUnaryOperation && $token->isPrefix())))
+                    || ($expectBinaryOrPostfixUnary &&
+                        !($token instanceof HasBinaryOperation
+                            || ($token instanceof HasUnaryOperation && $token->isPostfix())))) {
+                    if ($token instanceof HasOperation) {
+                        $this->error = 'Unexpected operator: ' . $token->getName();
+                    } else {
+                        $this->error = 'Unexpected operation, received: ' . var_export($token, true);
+                    }
 //                    $this->error = 'Unexpected operator: ' . $token->getName()
 //                        . (isset($lastToken) ? '<br/>Following token = '
 //                            . ($lastToken instanceof HasName ? $lastToken->getName() : $lastToken) . '' : '')
@@ -248,64 +247,64 @@ class ShuntingYardProcessor
 //                        . (isset($lastToken) ? '<br/>' . ' following token = ' . var_export($lastToken, true) : '')
 //                        . '<br/>So: $expectNullaryOrPrefixUnary = ' . var_export($expectNullaryOrPrefixUnary, true)
 //                        . ' and $expectBinaryOrPostfixUnary = ' . var_export($expectBinaryOrPostfixUnary, true);
-                        $this->debugLog[] = $this->error;
-                        return;
-                    } elseif (is_string($token) && $this->operationRegistry->isSymbolName($token)) {
-                        $this->error = 'No operation found for ' . $token . '<br/>';
-                        $this->debugLog[] = $this->error;
-                        return;
-                    } elseif ($token instanceof HasOperation) {
-                        $operation = $token;
-                        $groupOpenFound = false;
-                        $arrayOpenFound = false;
-                        while ($this->success() && !empty($operationStack) && $this->shouldProcessOperator($operation, end($operationStack))) {
-                            $popped = array_pop($operationStack);
-                            $result = $this->callOperation($popped);
-                            $this->postfixTokenArray[] = $result;
-                            $this->debugLog[] = 'Pushing ' . var_export($result, true) . ' onto postfixTokenArray';
-                            $groupOpenFound = $operation instanceof CloseGroupOperatorEntry && $operation->getOpen() == $popped->getName();
-                            $arrayOpenFound = $operation instanceof CloseArrayOperatorEntry && $operation->getOpen() == $popped->getName();
-                            if ($groupOpenFound) {
-                                //specifically check for function calls before matched open parenthesis
-                                if (end($operationStack) instanceof FunctionEntry) {
-                                    $result = $this->callOperation(array_pop($operationStack));
-                                    $this->postfixTokenArray[] = $result;
-                                    $this->debugLog[] = 'Pushing ' . var_export($result, true) . ' onto postfixTokenArray';
-                                }
-                                break;
+                    $this->debugLog[] = $this->error;
+                    return;
+                } elseif (is_string($token) && $this->operationRegistry->isSymbolName($token)) {
+                    $this->error = 'No operation found for ' . $token . '<br/>';
+                    $this->debugLog[] = $this->error;
+                    return;
+                } elseif ($token instanceof HasOperation) {
+                    $operation = $token;
+                    $groupOpenFound = false;
+                    $arrayOpenFound = false;
+                    while ($this->success() && !empty($operationStack) && $this->shouldProcessOperator($operation, end($operationStack))) {
+                        $popped = array_pop($operationStack);
+                        $result = $this->callOperation($popped);
+                        $this->postfixTokenArray[] = $result;
+                        $this->debugLog[] = 'Pushing ' . var_export($result, true) . ' onto postfixTokenArray';
+                        $groupOpenFound = $operation instanceof CloseGroupOperatorEntry && $operation->getOpen() == $popped->getName();
+                        $arrayOpenFound = $operation instanceof CloseArrayOperatorEntry && $operation->getOpen() == $popped->getName();
+                        if ($groupOpenFound) {
+                            //specifically check for function calls before matched open parenthesis
+                            if (end($operationStack) instanceof FunctionEntry) {
+                                $result = $this->callOperation(array_pop($operationStack));
+                                $this->postfixTokenArray[] = $result;
+                                $this->debugLog[] = 'Pushing ' . var_export($result, true) . ' onto postfixTokenArray';
                             }
-                            if ($arrayOpenFound) {
-                                break;
-                            }
-                            if ($popped instanceof FunctionEntry) {
-                                $this->error = 'No arguments passed to function: ' . $popped->getName() . ' (Function calls require parenthesis)';
-                                $this->debugLog[] = $this->error;
-                                return;
-                            }
+                            break;
                         }
-                        if ($operation instanceof CloseGroupOperatorEntry && !$groupOpenFound) {
-                            $this->error = 'Mismatched group operator: ' . $operation->getClose();
+                        if ($arrayOpenFound) {
+                            break;
+                        }
+                        if ($popped instanceof FunctionEntry) {
+                            $this->error = 'No arguments passed to function: ' . $popped->getName() . ' (Function calls require parenthesis)';
                             $this->debugLog[] = $this->error;
                             return;
                         }
-                        if ($operation instanceof CloseArrayOperatorEntry && !$arrayOpenFound) {
-                            $this->error = 'Mismatched array operator: ' . $operation->getClose();
-                            $this->debugLog[] = $this->error;
-                            return;
-                        }
-                        if ($this->success() && !$operation instanceof CloseGroupOperatorEntry && !$operation instanceof CloseArrayOperatorEntry) {
-                            $operationStack[] = $operation;
-                            $this->debugLog[] = 'Pushing ' . $token->getName() . ' onto operationStack';
-                        }
-                    } elseif (!is_array($token) && strval(intval($token)) == strval($token)) {
-                        $this->postfixTokenArray[] = intval($token);
-                        $this->debugLog[] = 'Pushing ' . intval($token) . ' onto postfixTokenArray';
-                    } elseif (!is_array($token) && strval(floatval($token)) == strval($token)) {
-                        $this->postfixTokenArray[] = floatval($token);
-                        $this->debugLog[] = 'Pushing ' . floatval($token) . ' onto postfixTokenArray';
-                    } else {
-                        $this->error = 'Unrecognized token: ' . var_export($token, true);
                     }
+                    if ($operation instanceof CloseGroupOperatorEntry && !$groupOpenFound) {
+                        $this->error = 'Mismatched group operator: ' . $operation->getClose();
+                        $this->debugLog[] = $this->error;
+                        return;
+                    }
+                    if ($operation instanceof CloseArrayOperatorEntry && !$arrayOpenFound) {
+                        $this->error = 'Mismatched array operator: ' . $operation->getClose();
+                        $this->debugLog[] = $this->error;
+                        return;
+                    }
+                    if ($this->success() && !$operation instanceof CloseGroupOperatorEntry && !$operation instanceof CloseArrayOperatorEntry) {
+                        $operationStack[] = $operation;
+                        $this->debugLog[] = 'Pushing ' . $token->getName() . ' onto operationStack';
+                    }
+                } elseif (!is_array($token) && strval(intval($token)) == strval($token)) {
+                    $this->postfixTokenArray[] = intval($token);
+                    $this->debugLog[] = 'Pushing ' . intval($token) . ' onto postfixTokenArray';
+                } elseif (!is_array($token) && strval(floatval($token)) == strval($token)) {
+                    $this->postfixTokenArray[] = floatval($token);
+                    $this->debugLog[] = 'Pushing ' . floatval($token) . ' onto postfixTokenArray';
+                } else {
+                    $this->error = 'Unrecognized token: ' . var_export($token, true);
+                }
                 $lastToken = $token;
             }
             if ($this->success()) {

@@ -69,14 +69,18 @@ class DiceRollSymbolRegistry extends SymbolRegistry
 
     protected function getSideArrayString($sideArray)
     {
-        if (count($sideArray) == 1) {
-            $sideArrayString = $this->recursiveImplode(',', reset($sideArray));
-        } elseif ($sideArray == range(1, 100)) {
+        if ($sideArray == range(1, 100)) {
             $sideArrayString = "%";
         } elseif ($sideArray == range(-1, 1)) {
             $sideArrayString = "f";
         } elseif (is_numeric(end($sideArray)) && $sideArray == range(1, end($sideArray))) {
             $sideArrayString = end($sideArray);
+        } elseif (is_numeric(reset($sideArray)) && $sideArray == range(reset($sideArray), -1)) {
+            $sideArrayString = '(' . reset($sideArray) . ')';
+        } elseif (is_numeric(reset($sideArray)) && reset($sideArray) == 0) {
+            $sideArrayString = 0;
+        } elseif (count($sideArray) == 1) {
+            $sideArrayString = '[' . $this->recursiveImplode(',', reset($sideArray)) . ']';
         } else {
             $sideArrayString = $this->recursiveImplode(',', $sideArray);
         }
@@ -192,6 +196,19 @@ class DiceRollSymbolRegistry extends SymbolRegistry
         $log .= " = " . $this->recursiveImplode(',', $result);
         $this->logCalculation($log);
         return $result;
+    }
+
+    protected function rawDiceRoll($diceCount, $sideArray)
+    {
+        if (is_array($sideArray)) {
+            return self::diceRoll($diceCount, $sideArray);
+        } elseif ($sideArray < 0) {
+            return self::diceRoll($diceCount, range($sideArray, -1));
+        } elseif ($sideArray == 0) {
+            return self::diceRoll($diceCount, [0]);
+        } else {
+            return self::diceRoll($diceCount, range(1, $sideArray));
+        }
     }
 
     protected function diceRoll($diceCount, $sideArray)
@@ -333,35 +350,32 @@ class DiceRollSymbolRegistry extends SymbolRegistry
             if (!is_numeric($index) || strval(intval($index)) != strval($index)) {
                 throw new \InvalidArgumentException('Unable to perform operation: ' . $log);
             } elseif (empty($this->rawRolls)) {
-                throw new \InvalidArgumentException('Unable to perform operation: ' . $log 
-                    . ' No rolls logged yet.');
-            } elseif ($index < 1 || $index > count($this->rawRolls)) {
-                $rangeString = '1' . (count($this->rawRolls) > 1 ? '-' . count($this->rawRolls) : '');
                 throw new \InvalidArgumentException('Unable to perform operation: ' . $log
-                    . ' (Allowed range: ' . $rangeString . ')');
+                    . ' (No rolls logged yet)');
+            } elseif ($index >= count($this->rawRolls) || $index < -count($this->rawRolls)) {
+                $rangeString = -count($this->rawRolls) . ', ' . (count($this->rawRolls) - 1);
+                throw new \InvalidArgumentException('Unable to perform operation: ' . $log
+                    . ' (Allowed range: [' . $rangeString . '])');
             }
-            $result = $this->rawRolls[$index - 1];
+            $result = null;
+            if ($index < 0) {
+                $result = $this->rawRolls[$index + count($this->rawRolls)];
+            } else {
+                $result = $this->rawRolls[$index];
+            }
             $this->logCalculation($log . ' = ' . $this->recursiveImplode(',', $result));
             return $result;
         }));
         $this->register(new BinaryOperatorEntry('d', BinaryOperatorEntry::LEFT_ASSOCIATIVE, 3, function ($operand1, $operand2) {
-            if (is_array($operand2)) {
-                return self::diceRoll($operand1, $operand2);
-            } else {
-                return self::diceRoll($operand1, range(1, $operand2));
-            }
+            return self::rawDiceRoll($operand1, $operand2);
         }));
         $this->register(new UnaryOperatorEntry('d', UnaryOperatorEntry::PREFIX, function ($operand) {
-            if ((int)$operand == $operand) {
-                return self::diceRoll(1, range(1, $operand));
-            } else {
-                return self::diceRoll(1, $operand);
-            }
+            return self::rawDiceRoll(1, $operand);
         }));
 
         $this->register(new FunctionEntry("max", function ($array) {
             if (empty($array)) {
-                throw new \InvalidArgumentException("Too few arguments passed to function: min");
+                throw new \InvalidArgumentException("Too few arguments passed to function: max");
             }
             $result = is_array($array) ? max($array) : $array;
             $this->logCalculation('max(' . $this->recursiveImplode(',', $array) . ') = ' . $this->recursiveImplode(',', $result));
