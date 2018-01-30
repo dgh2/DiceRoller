@@ -69,6 +69,7 @@ class DiceRollSymbolRegistry extends SymbolRegistry
 
     protected function getSideArrayString($sideArray)
     {
+        sort($sideArray);
         if ($sideArray == range(1, 100)) {
             $sideArrayString = "%";
         } elseif ($sideArray == range(-1, 1)) {
@@ -77,8 +78,8 @@ class DiceRollSymbolRegistry extends SymbolRegistry
             $sideArrayString = end($sideArray);
         } elseif (is_numeric(reset($sideArray)) && $sideArray == range(reset($sideArray), -1)) {
             $sideArrayString = '(' . reset($sideArray) . ')';
-        } elseif (is_numeric(reset($sideArray)) && reset($sideArray) == 0) {
-            $sideArrayString = 0;
+        } elseif (count($sideArray) == 1 && reset($sideArray) == 0) {
+            $sideArrayString = '0';
         } elseif (count($sideArray) == 1) {
             $sideArrayString = '[' . $this->recursiveImplode(',', reset($sideArray)) . ']';
         } else {
